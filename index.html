@@ -562,14 +562,14 @@ function vBill() {
     b.items.forEach(r => (groups[r.code] = groups[r.code] || []).push(r));
     body = `
     <div class="card y" style="margin-top:12px">
-      <div class="date">${m} 月結帳金額（含集點卡）</div>
+      <div class="date">${m} 月結帳金額（已含點數換的錢）</div>
       <div class="big">${money(b.final)}</div>
       <div class="kpis">
         <div><b>${money(b.total)}</b>任務金額</div>
-        <div><b>${b.points}</b>點數</div>
-        <div><b>${b.cards}</b>集點卡</div>
+        <div><b>${b.left}</b>目前點數</div>
+        <div><b>+${money(b.bonus)}</b>點數換到</div>
       </div>
-      <div style="font-size:12px;color:#6E5D44;margin-top:8px">每 10 元 1 點・50 點＝1 張集點卡・每張多 $50</div>
+      <div style="font-size:12px;color:#6E5D44;margin-top:8px">${b.cards ? `這個月用 ${b.cards * b.rule.card} 點換了 ${b.cards} 張集點卡，已加進結帳金額 🎉<br>` : ''}${b.left >= b.rule.card ? `這個月已經換到上限，剩下的點數下個月會自動再換<br>` : b.left > 0 ? `再 ${b.rule.card - b.left} 點就能多換 $${b.rule.value}<br>` : ''}每 ${b.rule.per} 元 1 點・滿 ${b.rule.card} 點自動換 $${b.rule.value}・每月最多換 $${b.rule.cap.toLocaleString()}・點數會累積到下個月</div>
     </div>
     ${b.pending || b.rejected ? `<p style="text-align:center;color:var(--muted);font-size:13px">另外還有 ${b.pending} 筆待審核${b.rejected ? `、<b style="color:var(--red)">${b.rejected} 筆被退回</b>` : ''}</p>` : ''}
     ${Object.keys(groups).map(k => {
@@ -675,8 +675,8 @@ function demoApi(action, d) {
     if (action === 'bill') {
       const items = demo.tasks.filter(r => r.time && r.time.replace('-', '').startsWith(d.month));
       const total = items.filter(r => r.status === '通過').reduce((s, r) => s + r.amount, 0);
-      const pts = total / 10, cards = pts / 50;
-      return res({ month: d.month, items, total, points: pts, cards: Math.round(cards * 100) / 100, final: Math.floor(cards) * 50 + total, approved: items.filter(r => r.status === '通過').length, pending: items.filter(r => r.status === '已回報').length, rejected: 0 });
+      const pts = Math.floor(total / 10);
+      return res({ month: d.month, items, total, left: pts % 100, cards: Math.floor(pts / 100), bonus: Math.floor(pts / 100) * 50, final: Math.floor(pts / 100) * 50 + total, rule: { per: 10, card: 100, value: 50, cap: 1000 }, approved: items.filter(r => r.status === '通過').length, pending: items.filter(r => r.status === '已回報').length, rejected: 0 });
     }
     if (action === 'call' || action === 'dispute') return res({});
     res(clone());
