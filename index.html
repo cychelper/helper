@@ -259,10 +259,29 @@ function taskById(id) { return state.tasks.find(t => t.id === id); }
 async function api(action, data) {
   data = data || {};
   if (DEMO) return demoApi(action, data);
-  const r = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify(Object.assign({ action, idToken }, data)) });
-  const j = await r.json();
-  if (!j.ok) throw new Error(j.error || '發生錯誤，請稍後再試');
-  return j.data;
+  // 人多的時候自動重試：讀資料的動作（init / bill）連線失敗也重試；
+  // 寫入的動作只有在系統明確說「忙碌」（代表還沒寫進去）時才重試，避免重複送出
+  const readOnly = action === 'init' || action === 'bill';
+  const waits = [1000, 2500, 5000];
+  for (let i = 0; ; i++) {
+    let j;
+    try {
+      const r = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify(Object.assign({ action, idToken }, data)) });
+      j = await r.json();
+    } catch (e) {
+      if (readOnly && i < waits.length) { await new Promise(r => setTimeout(r, waits[i])); continue; }
+      throw new Error('連線不太穩，請稍後再試一次');
+    }
+    if (j.ok) return j.data;
+    if (j.busy && i < waits.length) { busyHint(true); await new Promise(r => setTimeout(r, waits[i] + Math.random() * 1000)); continue; }
+    busyHint(false);
+    throw new Error(j.error || '發生錯誤，請稍後再試');
+  }
+}
+/* 忙碌時在上方顯示「排隊中」的小提示 */
+function busyHint(on) {
+  const s = document.getElementById('sub');
+  if (s && on) s.textContent = '人比較多，排隊中…';
 }
 function applyInit(d) { Object.assign(state, d); }
 
