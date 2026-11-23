@@ -309,7 +309,7 @@ async function boot() {
     if (d.pending) {   // 還沒通過管理員審核
       $('#title').textContent = '等待審核'; $('#sub').textContent = '';
       $('#main').innerHTML = `<div class="boot"><div class="big">🐰</div>
-        <p>嗨 <b>${esc(d.me.name || '')}</b>，已收到你的申請！<br>管理員審核通過後就可以使用囉。<br><br>通過後，再從 LINE 選單打開一次就好。</p>
+        <p>嗨 <b>${esc(d.me.name || '')}</b>，已收到你的申請！🎉<br><br>新系統預計 <b>2027 年 1 月</b>正式開放，<br>管理員審核通過後就可以使用囉。<br><br>開放後，再從 LINE 選單打開一次就好。</p>
         <button class="btn" onclick="location.reload()">重新整理</button></div>`;
       return;
     }
