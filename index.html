@@ -583,6 +583,9 @@ function vBill() {
     <div class="card y" style="margin-top:12px">
       <div class="date">${m} 月結帳金額（已含點數換的錢）</div>
       <div class="big">${money(b.final)}</div>
+      ${b.paid
+        ? `<div style="margin:4px 0 8px;font-weight:700;color:#3E7B4F">✅ 已於 ${b.paid.time.replace(/-/g, '/')} 結帳 ${money(b.paid.amount)}</div>`
+        : (b.final ? `<div style="margin:4px 0 8px;font-size:13px;color:#6E5D44">⏳ 尚未結帳</div>` : '')}
       <div class="kpis">
         <div><b>${money(b.total)}</b>任務金額</div>
         <div><b>${b.left}</b>目前點數</div>
