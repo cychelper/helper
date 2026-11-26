@@ -602,7 +602,7 @@ function vBill() {
       <div style="font-size:12px;color:#6E5D44;margin-top:8px">${b.cards ? `這個月用 ${b.cards * b.rule.card} 點換了 ${b.cards} 張集點卡，已加進結帳金額 🎉<br>` : ''}${b.rule.start && b.month < b.rule.start ? `點數從 ${b.rule.start.slice(0, 4)} 年 ${+b.rule.start.slice(4)} 月開始自動換錢，現在先累積<br>` : b.left >= b.rule.card ? `這個月已經換到上限，剩下的點數下個月會自動再換<br>` : b.left > 0 ? `再 ${b.rule.card - b.left} 點就能多換 $${b.rule.value}<br>` : ''}每 ${b.rule.per} 元 1 點・滿 ${b.rule.card} 點自動換 $${b.rule.value}・每月最多換 $${b.rule.cap.toLocaleString()}・點數會累積到下個月</div>
     </div>
     ${b.pay && b.pay.account
-      ? `<div style="font-size:13px;color:#6E5D44;margin:10px 2px">💳 收款：<b>${esc(b.pay.method)}</b>｜${esc(b.pay.account)} <button class="link" style="display:inline;padding:0 4px;font-size:13px" onclick="openPay()">✏️ 修改</button></div>`
+      ? `<div style="font-size:13px;color:#6E5D44;margin:10px 2px">💳 收款：<b>${esc(b.pay.method === 'LINE' ? 'LINE iPASS MONEY' : b.pay.method)}</b>｜${esc(b.pay.account)} <button class="link" style="display:inline;padding:0 4px;font-size:13px" onclick="openPay()">✏️ 修改</button></div>`
       : `<div class="notice" style="margin-top:10px">💳 還沒填收款資料，結帳時管理員才知道要轉到哪裡喔 <button class="btn" style="margin-top:8px" onclick="openPay()">填寫收款資料</button></div>`}
     ${b.pending || b.rejected ? `<p style="text-align:center;color:var(--muted);font-size:13px">另外還有 ${b.pending} 筆待審核${b.rejected ? `、<b style="color:var(--red)">${b.rejected} 筆被退回</b>` : ''}</p>` : ''}
     ${Object.keys(groups).map(k => {
@@ -672,10 +672,10 @@ async function saveSocial(inApp) {
  * ========================================================= */
 function openPay() {
   const p = (state.bill && state.bill.pay) || {};
-  const opts = ['LINE', '轉帳', '街口'];
+  const opts = ['LINE', '街口'];   // 轉帳只有少數人用，由管理員在後台幫忙設定
   $('#layer').innerHTML = `<div class="mask" onclick="if(event.target===this)closeCall()"><div class="sheet">
     <h3>💳 收款資料</h3><p>結帳時會轉到這裡，填一次就好</p>
-    <div class="chips" style="justify-content:center;margin-bottom:12px">${opts.map(o => `<button class="chip ${p.method === o ? 'on' : ''}" onclick="document.querySelectorAll('.sheet .chip').forEach(c=>c.classList.remove('on'));this.classList.add('on');document.getElementById('payM').value='${o}';document.getElementById('payA').placeholder='${o === 'LINE' ? 'LINE Pay 帳號／手機號碼' : o === '轉帳' ? '銀行代碼＋帳號，例如 822-1234567890' : '街口帳號'}'">${o === 'LINE' ? 'LINE Pay' : o}</button>`).join('')}</div>
+    <div class="chips" style="justify-content:center;margin-bottom:12px">${opts.map(o => `<button class="chip ${p.method === o ? 'on' : ''}" onclick="document.querySelectorAll('.sheet .chip').forEach(c=>c.classList.remove('on'));this.classList.add('on');document.getElementById('payM').value='${o}';document.getElementById('payA').placeholder='${o === 'LINE' ? 'LINE iPASS MONEY 帳號／手機號碼' : '街口帳號／手機號碼'}'">${o === 'LINE' ? 'LINE iPASS MONEY' : o}</button>`).join('')}</div>
     <input type="hidden" id="payM" value="${esc(p.method || '')}">
     <input id="payA" class="in" maxlength="60" inputmode="text" value="${esc(p.account || '')}" placeholder="先選收款方式">
     <button class="btn" onclick="savePay()">儲存 🐾</button>
