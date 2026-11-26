@@ -310,13 +310,19 @@ async function boot() {
       $('#title').textContent = '等待審核'; $('#sub').textContent = '';
       $('#main').innerHTML = `<div class="boot"><div class="big">🐰</div>
         <p>嗨 <b>${esc(d.me.name || '')}</b>，已收到你的申請！🎉<br><br>新系統預計 <b>2027 年 1 月</b>正式開放，<br>管理員審核通過後就可以使用囉。<br><br>開放後，再從 LINE 選單打開一次就好。</p>
-        <button class="btn" onclick="location.reload()">重新整理</button></div>`;
+        <div class="card" style="text-align:left;margin:14px 0">
+          <b>📝 你在社群的名稱</b><div style="font-size:12px;color:#6E5D44;margin:4px 0 8px">方便管理員找到你${d.me.social ? '（已填好，可以修改）' : '，請先填一下喔'}</div>
+          <input id="socialIn" class="in" maxlength="40" value="${esc(d.me.social || '')}" placeholder="例如你在 LINE 社群裡用的名字">
+          <button class="btn" style="margin-top:8px" onclick="saveSocial(false)">儲存</button>
+        </div>
+        <button class="link" onclick="location.reload()">重新整理</button></div>`;
       return;
     }
     applyInit(d);
     $('#tabs').style.display = ''; $('#callbtn').style.display = '';
     render();
-    if (state.openCall) openCall();
+    if (!state.me.social) openSocial(true);
+    else if (state.openCall) openCall();
   } catch (e) {
     $('#sub').textContent = '';
     $('#main').innerHTML = `<div class="boot"><div class="big">🙈</div><p>${esc(e.message)}</p><button class="btn" onclick="location.reload()">重新整理</button></div>`;
@@ -353,6 +359,7 @@ function vHome() {
     <div class="hi">${state.me.picture ? `<img src="${esc(state.me.picture)}" alt="">` : '🐰 '}嗨，<b>${esc(state.me.name)}</b></div>
     <button class="mini" onclick="go('bill')">本月 ${money(st.amount)} ・ ${st.points} 點 ›</button>
   </div>
+  <div style="font-size:12px;color:#6E5D44;margin:-4px 2px 10px">社群名稱：<b>${esc(state.me.social || '還沒填')}</b> <button class="link" style="display:inline;padding:0 4px" onclick="openSocial(false)">✏️ 修改</button></div>
   ${state.me.bound ? '' : `<div class="notice">👋 第一次使用嗎？管理員幫你開通後，派給你的任務就會出現在「我的任務」。<br>等太久可以按右上角「呼叫管理員」。</div>`}
 
   <div class="sec">每日行程</div>
@@ -635,6 +642,28 @@ function vBook() {
 }
 
 /* =========================================================
+ * 社群名稱（第一次一定要填，之後可以在首頁修改）
+ * ========================================================= */
+function openSocial(required) {
+  $('#layer').innerHTML = `<div class="mask" ${required ? '' : `onclick="if(event.target===this)closeCall()"`}><div class="sheet">
+    <h3>📝 你在社群的名稱</h3><p>請填你在社群裡用的名字，方便管理員找到你</p>
+    <input id="socialIn" class="in" maxlength="40" value="${esc(state.me.social || '')}" placeholder="例如你在 LINE 社群裡用的名字">
+    <button class="btn" onclick="saveSocial(true)">儲存 🐾</button>
+    ${required ? '' : '<button class="link" onclick="closeCall()">取消</button>'}
+  </div></div>`;
+  setTimeout(() => { const i = $('#socialIn'); if (i) i.focus(); }, 100);
+}
+async function saveSocial(inApp) {
+  const v = ($('#socialIn').value || '').trim();
+  if (!v) { toast('請輸入你在社群的名稱'); return; }
+  busy(true, '儲存中…');
+  try {
+    await api('profile', { social: v }); busy(false); toast('已儲存 ✅');
+    if (inApp) { state.me.social = v; closeCall(); render(); if (state.openCall) { state.openCall = false; openCall(); } }
+  } catch (e) { busy(false); toast(e.message); }
+}
+
+/* =========================================================
  * 呼叫管理員
  * ========================================================= */
 function openCall() {
@@ -662,7 +691,7 @@ async function sendCall() {
 const demo = (() => {
   const t = new Date(), Y = t.getFullYear(), M = pad(t.getMonth() + 1), D = ymd(t);
   return {
-    me: { name: 'wei（展示）', picture: '', bound: true },
+    me: { name: 'wei（展示）', picture: '', bound: true, social: '小薇' },
     board: { status: '今日正常回覆中', note: '目前正在陸續給案號中', updated: `${D} 14:31` },
     cases: [
       { id: 'P01', name: '寵物翠留言', desc: '在指定貼文下留言，內容要自然、不要複製貼上。\n每個帳號留 1 則。', status: '招募中', price: 10, quota: 100, deadline: `${Y}-${M}-28`, count: 71, mine: 0, mineNote: '' },
@@ -700,7 +729,7 @@ function demoApi(action, d) {
       const pts = Math.floor(total / 10);
       return res({ month: d.month, items, total, left: pts % 100, cards: Math.floor(pts / 100), bonus: Math.floor(pts / 100) * 50, final: Math.floor(pts / 100) * 50 + total, rule: { per: 10, card: 100, value: 50, cap: 1000 }, approved: items.filter(r => r.status === '通過').length, pending: items.filter(r => r.status === '已回報').length, rejected: 0 });
     }
-    if (action === 'call' || action === 'dispute') return res({});
+    if (action === 'call' || action === 'dispute' || action === 'profile') return res({});
     res(clone());
   }, 350));
 }
