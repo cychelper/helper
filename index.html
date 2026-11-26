@@ -599,7 +599,7 @@ function vBill() {
         <div><b>${b.left}</b>目前點數</div>
         <div><b>+${money(b.bonus)}</b>點數換到</div>
       </div>
-      <div style="font-size:12px;color:#6E5D44;margin-top:8px">${b.cards ? `這個月用 ${b.cards * b.rule.card} 點換了 ${b.cards} 張集點卡，已加進結帳金額 🎉<br>` : ''}${b.rule.start && b.month < b.rule.start ? `點數從 ${b.rule.start.slice(0, 4)} 年 ${+b.rule.start.slice(4)} 月開始自動換錢，現在先累積<br>` : b.left >= b.rule.card ? `這個月已經換到上限，剩下的點數下個月會自動再換<br>` : b.left > 0 ? `再 ${b.rule.card - b.left} 點就能多換 $${b.rule.value}<br>` : ''}每 ${b.rule.per} 元 1 點・滿 ${b.rule.card} 點自動換 $${b.rule.value}・每月最多換 $${b.rule.cap.toLocaleString()}・點數會累積到下個月</div>
+      <div style="font-size:12px;color:#6E5D44;margin-top:8px">${b.cards ? `這個月用 ${b.cards * b.rule.card} 點換了 ${b.cards} 張集點卡，已加進結帳金額 🎉<br>` : ''}${b.rule.start && b.month < b.rule.start ? `點數從 ${b.rule.start.slice(0, 4)} 年 ${+b.rule.start.slice(4)} 月開始自動換錢，現在先累積<br>` : b.expired ? `這個月已經換到上限 $${b.rule.cap.toLocaleString()}，超過的 ${b.expired} 點不會累積喔<br>` : b.left > 0 ? `再 ${b.rule.card - b.left} 點就能多換 $${b.rule.value}<br>` : ''}每 ${b.rule.per} 元 1 點・滿 ${b.rule.card} 點自動換 $${b.rule.value}・每月最多換 $${b.rule.cap.toLocaleString()}（超過的點數不累積）・換不到一張的零頭會留到下個月</div>
     </div>
     ${b.pay && b.pay.account
       ? `<div style="font-size:13px;color:#6E5D44;margin:10px 2px">💳 收款：<b>${esc(b.pay.method === 'LINE' ? 'LINE iPASS MONEY' : b.pay.method)}</b>｜${esc(b.pay.account)} <button class="link" style="display:inline;padding:0 4px;font-size:13px" onclick="openPay()">✏️ 修改</button></div>`
