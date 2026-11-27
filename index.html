@@ -308,16 +308,7 @@ async function boot() {
 
     const d = await api('init');
     if (d.pending) {   // 還沒通過管理員審核
-      $('#title').textContent = '等待審核'; $('#sub').textContent = '';
-      $('#main').innerHTML = `<div class="boot"><div class="big">🐰</div>
-        <p>嗨 <b>${esc(d.me.name || '')}</b>，已收到你的申請！🎉<br><br>新系統預計 <b>2027 年 1 月</b>正式開放，<br>管理員審核通過後就可以使用囉。<br><br>開放後，再從 LINE 選單打開一次就好。</p>
-        <div class="card" style="text-align:left;margin:14px 0">
-          <b>📝 你在社群的名稱</b><div style="font-size:12px;color:#6E5D44;margin:4px 0 8px">方便管理員找到你${d.me.social ? '（已填好，可以修改）' : '，請先填一下喔'}</div>
-          <input id="socialIn" class="in" maxlength="40" value="${esc(d.me.social || '')}" placeholder="例如你在 LINE 社群裡用的名字">
-          <button class="btn" style="margin-top:8px" onclick="saveSocial(false)">儲存</button>
-        </div>
-        <button class="link" onclick="location.reload()">重新整理</button></div>`;
-      return;
+      state.me = d.me; state.pendingView = true; showPending(); return;
     }
     applyInit(d);
     $('#tabs').style.display = ''; $('#callbtn').style.display = '';
@@ -328,6 +319,25 @@ async function boot() {
     $('#sub').textContent = '';
     $('#main').innerHTML = `<div class="boot"><div class="big">🙈</div><p>${esc(e.message)}</p><button class="btn" onclick="location.reload()">重新整理</button></div>`;
   }
+}
+
+/* 等待審核畫面（可以先填社群名稱、結帳資料） */
+function showPending() {
+  const d = { me: state.me }, pay = d.me.pay || {};
+  $('#title').textContent = '等待審核'; $('#sub').textContent = '';
+      $('#main').innerHTML = `<div class="boot"><div class="big">🐰</div>
+        <p>嗨 <b>${esc(d.me.name || '')}</b>，已收到你的申請！🎉<br><br>新系統預計 <b>2027 年 1 月</b>正式開放，<br>管理員審核通過後就可以使用囉。<br><br>開放後，再從 LINE 選單打開一次就好。</p>
+        <div class="card" style="text-align:left;margin:14px 0">
+          <b>📝 你在社群的名稱</b><div style="font-size:12px;color:#6E5D44;margin:4px 0 8px">方便管理員找到你${d.me.social ? '（已填好，可以修改）' : '，請先填一下喔'}</div>
+          <input id="socialIn" class="in" maxlength="40" value="${esc(d.me.social || '')}" placeholder="例如你在 LINE 社群裡用的名字">
+          <button class="btn" style="margin-top:8px" onclick="saveSocial(false)">儲存</button>
+        </div>
+        <div class="card" style="text-align:left;margin:14px 0">
+          <b>💳 結帳資料</b><div style="font-size:12px;color:#6E5D44;margin:4px 0 8px">結帳時會轉到這裡（iPASS MONEY 或街口的帳號，不是手機號碼）</div>
+          ${pay.account ? `<div style="font-size:14px;margin-bottom:8px"><b>${esc(payName(pay.method))}</b>｜${esc(pay.account)}</div>` : ''}
+          <button class="btn" style="margin-top:0" onclick="openPay()">${pay.account ? '修改結帳資料' : '填寫結帳資料'}</button>
+        </div>
+        <button class="link" onclick="location.reload()">重新整理</button></div>`;
 }
 
 function go(t) {
@@ -602,7 +612,7 @@ function vBill() {
       <div style="font-size:12px;color:#6E5D44;margin-top:8px">${b.cards ? `這個月用 ${b.cards * b.rule.card} 點換了 ${b.cards} 張集點卡，已加進結帳金額 🎉<br>` : ''}${b.rule.start && b.month < b.rule.start ? `點數從 ${b.rule.start.slice(0, 4)} 年 ${+b.rule.start.slice(4)} 月開始自動換錢，現在先累積<br>` : b.expired ? `這個月已經換到上限 $${b.rule.cap.toLocaleString()}，超過的 ${b.expired} 點不會累積喔<br>` : b.left > 0 ? `再 ${b.rule.card - b.left} 點就能多換 $${b.rule.value}<br>` : ''}每 ${b.rule.per} 元 1 點・滿 ${b.rule.card} 點自動換 $${b.rule.value}・每月最多換 $${b.rule.cap.toLocaleString()}（超過的點數不累積）・換不到一張的零頭會留到下個月</div>
     </div>
     ${b.pay && b.pay.account
-      ? `<div style="font-size:13px;color:#6E5D44;margin:10px 2px">💳 收款：<b>${esc(b.pay.method === 'LINE' ? 'LINE iPASS MONEY' : b.pay.method)}</b>｜${esc(b.pay.account)} <button class="link" style="display:inline;padding:0 4px;font-size:13px" onclick="openPay()">✏️ 修改</button></div>`
+      ? `<div style="font-size:13px;color:#6E5D44;margin:10px 2px">💳 結帳：<b>${esc(payName(b.pay.method))}</b>｜${esc(b.pay.account)} <button class="link" style="display:inline;padding:0 4px;font-size:13px" onclick="openPay()">✏️ 修改</button></div>`
       : `<div class="notice" style="margin-top:10px">💳 還沒填收款資料，結帳時管理員才知道要轉到哪裡喔 <button class="btn" style="margin-top:8px" onclick="openPay()">填寫收款資料</button></div>`}
     ${b.pending || b.rejected ? `<p style="text-align:center;color:var(--muted);font-size:13px">另外還有 ${b.pending} 筆待審核${b.rejected ? `、<b style="color:var(--red)">${b.rejected} 筆被退回</b>` : ''}</p>` : ''}
     ${Object.keys(groups).map(k => {
@@ -663,6 +673,7 @@ async function saveSocial(inApp) {
   busy(true, '儲存中…');
   try {
     await api('profile', { social: v }); busy(false); toast('已儲存 ✅');
+    if (!inApp && state.me) state.me.social = v;
     if (inApp) { state.me.social = v; closeCall(); render(); if (state.openCall) { state.openCall = false; openCall(); } }
   } catch (e) { busy(false); toast(e.message); }
 }
@@ -670,26 +681,31 @@ async function saveSocial(inApp) {
 /* =========================================================
  * 收款資料（結帳時用）
  * ========================================================= */
+function payName(m) { return m === 'LINE' ? 'iPASS MONEY' : (m || ''); }
 function openPay() {
-  const p = (state.bill && state.bill.pay) || {};
-  const opts = ['LINE', '街口'];   // 轉帳只有少數人用，由管理員在後台幫忙設定
+  const p = (state.bill && state.bill.pay) || (state.me && state.me.pay) || {};
+  const cur = payName(p.method);
+  const opts = ['iPASS MONEY', '街口'];   // 轉帳只有少數人用，由管理員直接寫在資料檔
   $('#layer').innerHTML = `<div class="mask" onclick="if(event.target===this)closeCall()"><div class="sheet">
-    <h3>💳 收款資料</h3><p>結帳時會轉到這裡，填一次就好</p>
-    <div class="chips" style="justify-content:center;margin-bottom:12px">${opts.map(o => `<button class="chip ${p.method === o ? 'on' : ''}" onclick="document.querySelectorAll('.sheet .chip').forEach(c=>c.classList.remove('on'));this.classList.add('on');document.getElementById('payM').value='${o}';document.getElementById('payA').placeholder='${o === 'LINE' ? 'LINE iPASS MONEY 帳號／手機號碼' : '街口帳號／手機號碼'}'">${o === 'LINE' ? 'LINE iPASS MONEY' : o}</button>`).join('')}</div>
-    <input type="hidden" id="payM" value="${esc(p.method || '')}">
-    <input id="payA" class="in" maxlength="60" inputmode="text" value="${esc(p.account || '')}" placeholder="先選收款方式">
+    <h3>💳 結帳資料</h3><p>選結帳平台、填帳號（不是手機號碼喔），填一次就好</p>
+    <div class="chips" style="justify-content:center;margin-bottom:12px">${opts.map(o => `<button class="chip ${cur === o ? 'on' : ''}" onclick="document.querySelectorAll('.sheet .chip').forEach(c=>c.classList.remove('on'));this.classList.add('on');document.getElementById('payM').value='${o}';document.getElementById('payA').placeholder='${o} 帳號'">${o}</button>`).join('')}</div>
+    <input type="hidden" id="payM" value="${esc(opts.indexOf(cur) >= 0 ? cur : '')}">
+    <input id="payA" class="in" maxlength="60" inputmode="text" value="${esc(opts.indexOf(cur) >= 0 ? (p.account || '') : '')}" placeholder="${cur && opts.indexOf(cur) >= 0 ? cur + ' 帳號' : '先選結帳平台'}">
     <button class="btn" onclick="savePay()">儲存 🐾</button>
     <button class="link" onclick="closeCall()">取消</button>
   </div></div>`;
 }
 async function savePay() {
   const method = $('#payM').value, account = ($('#payA').value || '').trim();
-  if (!method) { toast('請先選收款方式'); return; }
+  if (!method) { toast('請先選結帳平台'); return; }
   if (!account) { toast('請填寫帳號'); return; }
+  if (/^(\+?886|0)9\d{8}$/.test(account.replace(/[\s-]/g, ''))) { toast('請填帳號，不要填手機號碼喔'); return; }
   busy(true, '儲存中…');
   try {
     await api('payinfo', { method, account }); busy(false); closeCall(); toast('已儲存 ✅');
-    if (state.bill) { state.bill.pay = { method, account }; render(); }
+    if (state.me) state.me.pay = { method, account };
+    if (state.bill) state.bill.pay = { method, account };
+    if (state.pendingView) showPending(); else if (state.bill) render();
   } catch (e) { busy(false); toast(e.message); }
 }
 
